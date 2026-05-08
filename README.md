@@ -2,71 +2,79 @@
 
 ## Abstract
 **[Assignee: Hiển] | [Status: To do]**
-> **Hướng dẫn viết:** Tóm tắt ngắn gọn mục tiêu nhóm đề ra của bài tập lớn môn học IOT, bối cảnh áp dụng RTOS vào bài toán IoT thực tế trên nền tảng ESP32-S3. Trình bày tổng quan về các công nghệ cốt lõi được sử dụng và kết quả đạt được.
+> **Hướng dẫn viết:** Tóm tắt ngắn gọn mục tiêu của dự án trong bối cảnh môn học Hệ thống thời gian thực (Real-Time Systems). Trình bày cách áp dụng RTOS trên nền tảng ESP32-S3 để giải quyết bài toán giám sát rò rỉ gas. Tóm lược các công nghệ cốt lõi được sử dụng: FreeRTOS, TinyML, và Cloud Integration.
 
 ---
 
 ## 1. Introduction and Objectives
 **[Assignee: Hiển] | [Status: To do]**
-> **Hướng dẫn viết:** Nêu rõ lý do chọn đề tài và các mục tiêu chính của dự án. [cite_start]Đề cập đến phần cứng sử dụng và định hướng phát triển mã nguồn gốc[cite: 7].
+> **Hướng dẫn viết:** Giải thích lý do thực hiện đề tài và các mục tiêu chính của dự án. Đề cập đến việc phát triển dựa trên mã nguồn gốc YoloUNO_PlatformIO và mục tiêu thay đổi ít nhất 30% logic hệ thống so với bản gốc. Nêu rõ phạm vi thiết bị được thiết lập tại phòng 301B9 và 812H6.
 
 ---
 
 ## 2. System Implementation & Innovations (Tasks 1-6)
-[cite_start]*(⚠️ Hướng dẫn chung: Chương này là phần quan trọng nhất của của báo cáo. Bắt đầu bằng kiến trúc tổng thể, sau đó mỗi Task phải được chia làm 2 phần rõ rệt: **Core Implementation** (đáp ứng đúng đặc tả) và **Advanced/Innovation** (sự khác biệt >30%sáng tạo từ đề tài)[cite: 8, 12]. Phân bổ dung lượng hợp lý, có ảnh/code snippet minh họa).*
+> *(⚠️ Hướng dẫn chung: Đây là chương trọng tâm của báo cáo. Bắt đầu bằng kiến trúc hạ tầng RTOS, sau đó trình bày chi tiết từng Task theo hai phần: **Core Implementation** (đáp ứng đúng đặc tả kỹ thuật) và **Advanced/Innovation** (các tính năng sáng tạo để tạo sự khác biệt). Phân bổ dung lượng hợp lý, kèm ảnh chụp minh họa và code snippet).*
 
 ### 2.1. Overall RTOS Architecture & Infrastructure
 **[Assignee: Hiển] | [Status: To do]**
-> **Hướng dẫn viết:** Đây là phần trình bày "Bức tranh toàn cảnh" (Big Picture) của hệ thống RTOS trước khi đi sâu vào chi tiết.
-> - **Task Management:** Đưa ra bảng quy hoạch Task Priority và Core Affinity (Core 0 cho mạng/HMI, Core 1 cho AI/Cảm biến).
-> - **Inter-task Communication:** Vẽ hoặc mô tả sơ đồ luồng dữ liệu, cách các task giao tiếp với nhau thông qua **Queue** (ví dụ: `qSensorLed`, `qSensorTinyML`).
-> [cite_start]- **Shared Resource Protection:** Giải thích việc khởi tạo và sử dụng **Mutex/Semaphore** toàn cục (như `i2c_semaphore`) để bảo vệ bus I2C tránh xung đột phần cứng ngay từ khâu setup.
+* **Task Management:** Quy hoạch bảng mức độ ưu tiên (Priority) và phân bổ lõi xử lý (Core Affinity) cho các tác vụ.
+* **Inter-task Communication:** Mô tả luồng dữ liệu giữa các thành phần thông qua cơ chế **Queue** thay vì sử dụng biến toàn cục.
+* **Shared Resource Protection:** Giải thích cách khởi tạo và sử dụng **Mutex/Semaphore** toàn cục (như `i2c_semaphore`) để bảo vệ tài nguyên dùng chung, tránh xung đột phần cứng.
 
 ### 2.2. Task 1: Single LED Blink with Temperature Conditions
 **[Assignee: Minh Huy] | [Status: To do]**
-* [cite_start]**Core Implementation:** Trình bày cách định nghĩa lại hành vi chớp tắt của LED để phản hồi với ít nhất 3 điều kiện nhiệt độ[cite: 15, 16]. [cite_start]Giải thích logic xử lý và cách sử dụng **Semaphore** để đồng bộ hóa task[cite: 17, 18].
-* **Advanced / Innovation:** (Người viết tự quyết định). *Gợi ý: Có thể là hiệu ứng chớp tắt phi tuyến tính (fading) thay vì blink cứng nhắc, hoặc ngưỡng nhiệt độ có thể thay đổi real-time (dynamic threshold) từ Webserver.*
+* **Core Implementation:** Định nghĩa ít nhất 3 hành vi chớp tắt của LED tương ứng với các điều kiện nhiệt độ khác nhau. Giải thích logic sử dụng **Semaphore** để đồng bộ hóa tác vụ hiển thị.
+* **Advanced / Innovation:** [Thành viên tự đề xuất và triển khai nội dung sáng tạo tại đây].
 
 ### 2.3. Task 2: NeoPixel LED Control Based on Humidity
 **[Assignee: Minh Huy] | [Status: To do]**
-* [cite_start]**Core Implementation:** Hiển thị bản đồ (mapping) giữa các dải giá trị độ ẩm và ít nhất 3 mức độ/màu sắc của NeoPixel[cite: 19, 20, 22]. [cite_start]Trình bày kỹ thuật đồng bộ hóa bằng **Semaphore** để cập nhật màu sắc[cite: 21].
-* **Advanced / Innovation:** (Người viết tự quyết định). *Gợi ý: Hiệu ứng chuyển màu mượt mà (breathing effect), hoặc nháy cảnh báo đỏ chớp nhoáng khi có rò rỉ gas chèn ngang độ ẩm.*
+* **Core Implementation:** Thiết lập bảng mã màu NeoPixel (RGB) đại diện cho ít nhất 3 dải độ ẩm khác nhau. Sử dụng kỹ thuật **Semaphore** để đồng bộ hóa việc cập nhật và hiển thị màu sắc.
+* **Advanced / Innovation:** [Thành viên tự đề xuất và triển khai nội dung sáng tạo tại đây].
 
 ### 2.4. Task 3: Temperature and Humidity Monitoring with LCD Display
-**[Assignee: Hiển] | [Status: To do]**
-* [cite_start]**Core Implementation:** Chụp ảnh màn hình hiển thị ít nhất 3 trạng thái (e.g., normal, warning, critical)[cite: 25]. [cite_start]Định nghĩa điều kiện tạo/giải phóng semaphores dựa trên cảm biến[cite: 24]. [cite_start]**BẮT BUỘC:** Đưa code snippet chứng minh đã loại bỏ TOÀN BỘ biến toàn cục (global variables)[cite: 26].
-* **Advanced / Innovation:** (Người viết tự quyết định). *Gợi ý: Sử dụng Mutex đã khai báo ở mục 2.1 để bảo vệ nghiêm ngặt bus I2C, hoặc tự vẽ các icon (custom characters) sinh động trên LCD.*
+**[Assignee: Minh Huy] | [Status: To do]**
+* **Core Implementation:** Hiển thị dữ liệu cảm biến lên màn hình LCD với ít nhất 3 trạng thái môi trường (e.g., Normal, Warning, Critical). Định nghĩa logic tạo/giải phóng semaphore dựa trên kết quả đo lường.
+* **BẮT BUỘC:** Chứng minh việc loại bỏ **HOÀN TOÀN** biến toàn cục (Global Variables) bằng cách sử dụng cơ chế truyền tin của RTOS.
+* **Advanced / Innovation:** [Thành viên tự đề xuất và triển khai nội dung sáng tạo tại đây].
 
 ### 2.5. Task 4: Web Server in Access Point Mode
 **[Assignee: Lê Huy] | [Status: To do]**
-* [cite_start]**Core Implementation:** Chụp ảnh giao diện Web Server đã được thiết kế lại (better usability)[cite: 27, 28]. [cite_start]Chứng minh có ít nhất 2 nút nhấn (có nhãn dán rõ ràng) để điều khiển 2 thiết bị (VD: LED1/LED2)[cite: 29, 30].
-* **Advanced / Innovation:** (Người viết tự quyết định). *Gợi ý: Dùng WebSockets/AJAX để cập nhật thông số real-time mà không cần tải lại trang, hoặc tính năng tự động chuyển từ AP mode sang Station mode khi cấu hình xong.*
+* **Core Implementation:** Thiết kế lại giao diện Web Server ở chế độ AP để tăng tính tiện dụng (User Experience). Tích hợp ít nhất 2 nút điều khiển có nhãn dán rõ ràng để quản lý 2 thiết bị đầu ra.
+* **Advanced / Innovation:** [Thành viên tự đề xuất và triển khai nội dung sáng tạo tại đây].
 
 ### 2.6. Task 5: TinyML Deployment & Accuracy Evaluation
 **[Assignee: Lê Huy] | [Status: To do]**
-* [cite_start]**Core Implementation:** Mô tả tập dữ liệu (dataset), các bước thu thập và gán nhãn[cite: 31, 32]. [cite_start]Trình bày quá trình chạy mô hình TinyML trên ESP32-S3[cite: 33]. [cite_start]Đo lường và đánh giá độ chính xác (accuracy)[cite: 34].
-* **Advanced / Innovation:** (Người viết tự quyết định). *Gợi ý: Áp dụng mô hình mạng nơ-ron phức tạp hơn (như CNN 1D cho dữ liệu chuỗi thời gian) hoặc tối ưu hóa Memory Arena để model chạy với RAM cực thấp.*
+* **Core Implementation:** Mô tả quy trình thu thập dữ liệu (dataset), các bước tiền xử lý và gán nhãn. Triển khai mô hình TinyML trên ESP32-S3 và đánh giá độ chính xác thực tế trên phần cứng.
+* **Advanced / Innovation:** [Thành viên tự đề xuất và triển khai nội dung sáng tạo tại đây].
 
 ### 2.7. Task 6: Data Publishing to CoreIOT Cloud Server
 **[Assignee: Hiển] | [Status: To do]**
-* [cite_start]**Core Implementation:** Trình bày chức năng gửi dữ liệu cảm biến lên CoreIOT qua WiFi (Station Mode)[cite: 36, 37]. [cite_start]Chụp ảnh code minh chứng đã dùng đúng Authentication Token và sử dụng template giải pháp[cite: 38, 39, 40].
-* **Advanced / Innovation:** (Người viết tự quyết định). *Gợi ý: Thiết lập Rule Chain trên CoreIOT để tự động gửi cảnh báo Telegram/Email khi có gas rò rỉ, hoặc dùng RPC để điều khiển Relay từ xa qua Cloud.*
+* **Core Implementation:** Cấu hình ESP32-S3 ở chế độ Station (STA) để kết nối WiFi và đẩy dữ liệu cảm biến lên server CoreIOT. Đảm bảo Authentication Token khớp với thiết bị đã đăng ký và sử dụng đúng Solution Template.
+* **Advanced / Innovation:** [Thành viên tự đề xuất và triển khai nội dung sáng tạo tại đây].
+
 ---
 
 ## 3. Experimental Evaluation
 **[Assignee: Team] | [Status: To do]**
-> [cite_start]**Hướng dẫn viết:** Tổng hợp lại các kết quả thử nghiệm thực tế của toàn bộ hệ thống (latency của hệ thống, thời gian phản hồi của relay, đánh giá TinyML)[cite: 46]. Sử dụng bảng biểu và biểu đồ để minh họa.
+> **Hướng dẫn viết:** Tổng hợp kết quả thực nghiệm về độ trễ hệ thống, hiệu năng của relay, và đánh giá chi tiết độ chính xác của mô hình TinyML. Sử dụng bảng biểu và biểu đồ để minh họa các thông số kỹ thuật thu được.
 
 ---
 
 ## 4. Group Organization & Git Contribution
-**[Assignee: Team] | [Status: To do]**
-> [cite_start]- Chèn link GitHub công khai chứa toàn bộ mã nguồn của nhóm[cite: 49].
-> [cite_start]- Đính kèm bảng phân công nhiệm vụ thể hiện rõ vai trò và đóng góp (100%) của các thành viên[cite: 48, 57].
-> [cite_start]- Chụp ảnh lịch sử Commit và luồng Git để chứng minh 5% điểm tổ chức nhóm[cite: 53].
+**[Assignee: Hiển] | [Status: To do]**
+* **GitHub Repository:** [Chèn link công khai của nhóm tại đây]
+* **Bảng phân công nhiệm vụ:** Liệt kê chi tiết vai trò và tỷ lệ đóng góp (cam kết 100% cho mỗi thành viên).
+* **Git Contribution:** Hình ảnh minh chứng lịch sử Commit, các Pull Request và cấu trúc quản lý nhánh (Branching strategy).
 
 ---
 
 ## 5. Group Discussion and Conclusions
-**[Assignee: Hiển] | [Status: To do]**
-> [cite_start]**Hướng dẫn viết:** Đưa ra thảo luận nhóm về các khó khăn gặp phải, bài học rút ra[cite: 47]. Kết luận lại những thành quả đạt được so với mục tiêu ban đầu.
+**[Assignee: Team] | [Status: To do]**
+> **Hướng dẫn viết:** Thảo luận về các khó khăn kỹ thuật đã gặp phải, các bài học rút ra về hệ thống thời gian thực. Kết luận về mức độ hoàn thành dự án so với mục tiêu ban đầu và đề xuất hướng phát triển tương lai.
+
+---
+
+### 📋 Thông tin dự án (Project Metadata)
+* **Thời hạn nộp (Deadline):** 22/05/2026.
+* **Hình thức nộp:** File PDF báo cáo và Link GitHub Repository, có thể thêm video demo nếu có.
+* **Trọng số đánh giá:** 60% Chức năng, 25% Chất lượng báo cáo, 5% Code, 5% Sáng tạo, 5% Quản lý Git.

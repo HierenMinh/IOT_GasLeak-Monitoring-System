@@ -60,7 +60,7 @@
 ---
 
 ## 4. Group Organization & Git Contribution
-**[Assignee: Hiển] | [Status: To do]**
+**[Assignee: Team] | [Status: To do]**
 > [cite_start]- Chèn link GitHub công khai chứa toàn bộ mã nguồn của nhóm[cite: 49].
 > [cite_start]- Đính kèm bảng phân công nhiệm vụ thể hiện rõ vai trò và đóng góp (100%) của các thành viên[cite: 48, 57].
 > [cite_start]- Chụp ảnh lịch sử Commit và luồng Git để chứng minh 5% điểm tổ chức nhóm[cite: 53].

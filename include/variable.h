@@ -23,8 +23,11 @@ typedef struct
 
 extern QueueHandle_t qSensorLed;
 extern QueueHandle_t qSensorNeo;
+extern QueueHandle_t qSensorLcd;
 
 extern QueueHandle_t qSensorTinyML;
 extern QueueHandle_t qAnomalyResult;
+
+extern SemaphoreHandle_t mI2cBus;
 
 #endif /* __VARIABLE_H__ */

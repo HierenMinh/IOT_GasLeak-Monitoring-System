@@ -179,6 +179,9 @@ void ui_init(sensor_handle_t sensor)
 
     myCBT.lcd.begin();
     myCBT.lcd.backlight();
+    myCBT.lcd.clear();
+    myCBT.lcd.setCursor(0, 0);
+    myCBT.lcd.print("Gas sensor warming up...");
 
     myCBT.strip.begin();
     myCBT.strip.clear();

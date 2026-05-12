@@ -11,4 +11,5 @@
 
 typedef struct ui_data_t *ui_handle_t;
 
+/*this API initializes all UI components and thread that manage them*/
 void ui_init(sensor_handle_t sensor);

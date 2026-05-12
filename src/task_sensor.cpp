@@ -18,11 +18,13 @@ struct sensor_t {
     TaskHandle_t task_handle;
     QueueHandle_t queue;
     EventGroupHandle_t event_group;
+    SemaphoreHandle_t i2c_mutex;
     TwoWire *wire;
     DHT20 dht20;
     MQ2Sensor mq2;
     sensor_t(): dht20(), mq2(MQ2PIN) {}
     float gas_baseline;
+
 };
 
 static float mq2_get_baseline(sensor_t *sensor)
@@ -42,6 +44,21 @@ static float mq2_get_baseline(sensor_t *sensor)
     }
 
     return sum / BASELINE_SAMPLES;
+}
+
+bool sensor_i2c_mutex_take(sensor_handle_t sensor, TickType_t timeout)
+{
+    if (xSemaphoreTake(sensor->i2c_mutex, timeout) == pdTRUE) {
+        return true;
+    } else {
+        Serial.println("Failed to take I2C mutex");
+        return false;
+    }
+}
+
+void sensor_i2c_mutex_give(sensor_handle_t sensor)
+{
+    xSemaphoreGive(sensor->i2c_mutex);
 }
 
 bool sensor_get_data(sensor_handle_t handle, sensor_data_t *data, EventBits_t myBits, TickType_t timeout)
@@ -71,8 +88,18 @@ void sensor_task(void *pvParameters){
 
     (*sensor).gas_baseline = mq2_get_baseline(sensor);
     while (1) {
+
+        vTaskDelay(pdMS_TO_TICKS(READ_INTERVAL_MS));
+
         sensor_data_t data;
-        sensor->dht20.read();
+
+        if (sensor_i2c_mutex_take(sensor, pdMS_TO_TICKS(0))) {
+            sensor->dht20.read();
+            sensor_i2c_mutex_give(sensor);
+        } else {
+            Serial.println("Failed to take I2C mutex for DHT20");
+            continue;
+        }
 
         data.temperature = sensor->dht20.getTemperature();
         data.humidity = sensor->dht20.getHumidity();
@@ -108,7 +135,6 @@ void sensor_task(void *pvParameters){
             memset(&accumulated_data, 0, sizeof(accumulated_data));
             sample_count = 0;
         }
-        vTaskDelay(pdMS_TO_TICKS(READ_INTERVAL_MS));
     }
 }
 
@@ -135,6 +161,12 @@ void sensor_init(sensor_handle_t *handle)
     sensor.event_group = xEventGroupCreate();
     if (sensor.event_group == NULL) {
         Serial.println("Failed to create sensor event group");
+        return;
+    }
+
+    sensor.i2c_mutex = xSemaphoreCreateMutex();
+    if (sensor.i2c_mutex == NULL) {
+        Serial.println("Failed to create sensor I2C mutex");
         return;
     }
     if ( pdPASS != xTaskCreate(sensor_task, "sensor_task", 4096, (void*)&sensor, 1, &sensor.task_handle) ) {

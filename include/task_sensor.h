@@ -22,6 +22,9 @@ typedef struct sensor_t *sensor_handle_t;
          sensor_init(&sensor); */
 void sensor_init(sensor_handle_t *handle);
 
+bool sensor_i2c_mutex_take(sensor_handle_t sensor, TickType_t timeout);
+void sensor_i2c_mutex_give(sensor_handle_t sensor);
+
 /* This API retrieves data from the sensor 
    Uses: sensor_data_t data;
          sensor_get_data(sensor, &data, UI_BIT, portMAX_DELAY); 

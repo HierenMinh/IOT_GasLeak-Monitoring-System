@@ -46,13 +46,19 @@ static float mq2_get_baseline(sensor_t *sensor)
 
 bool sensor_get_data(sensor_handle_t handle, sensor_data_t *data, EventBits_t myBits, TickType_t timeout)
 {
-    if (xQueuePeek(handle->queue, data, timeout) == pdTRUE) {
-        xEventGroupSetBits(handle->event_group, myBits);
-        return true;
-    } else {
-        Serial.println("No sensor data available");
+    if (handle == NULL || data == NULL) {
+        Serial.println("Invalid sensor handle or data pointer");
         return false;
     }
+
+    if (xEventGroupGetBits(handle->event_group) & myBits == 0) {
+        if (xQueuePeek(handle->queue, data, timeout) == pdTRUE) {
+            xEventGroupSetBits(handle->event_group, myBits);
+            return true;
+        }
+    }
+    /* Go through here means no new data is available */
+    return false;
 }
 
 void sensor_task(void *pvParameters){

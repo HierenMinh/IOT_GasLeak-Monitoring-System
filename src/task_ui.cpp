@@ -113,7 +113,10 @@ void thread_lcd_display(void *pvParameters){
                 char line1[8];
                 xStreamBufferReceive(uxCBT->myLCDstreamBuf, &temperature, sizeof(float), portMAX_DELAY);
                 sprintf(line1, "T:%.2f", temperature);
-                uxCBT->lcd.print(line1);
+                if (sensor_i2c_mutex_take(uxCBT->sensor, portMAX_DELAY)) {
+                    uxCBT->lcd.print(line1);
+                    sensor_i2c_mutex_give(uxCBT->sensor);
+                }
                 data_recv_count++;
             break;
             case 1:
@@ -122,7 +125,10 @@ void thread_lcd_display(void *pvParameters){
                 char line1[8];
                 xStreamBufferReceive(uxCBT->myLCDstreamBuf, &humidity, sizeof(float), portMAX_DELAY);
                 sprintf(line1, "H:%.2f%%", humidity);
-                uxCBT->lcd.print(line1);
+                if (sensor_i2c_mutex_take(uxCBT->sensor, portMAX_DELAY)) {
+                    uxCBT->lcd.print(line1);
+                    sensor_i2c_mutex_give(uxCBT->sensor);
+                }
                 data_recv_count++;
             break;
             case 2:
@@ -131,7 +137,10 @@ void thread_lcd_display(void *pvParameters){
                 char line2[12];
                 xStreamBufferReceive(uxCBT->myLCDstreamBuf, &gas, sizeof(float), portMAX_DELAY);
                 sprintf(line2, "Gas:%.2f", gas);
-                uxCBT->lcd.print(line2);
+                if (sensor_i2c_mutex_take(uxCBT->sensor, portMAX_DELAY)) {
+                    uxCBT->lcd.print(line2);
+                    sensor_i2c_mutex_give(uxCBT->sensor);
+                }
                 data_recv_count = 0;
             break;
             default:
@@ -150,13 +159,16 @@ void ui_controller(void *pvParameters){
     while (1) {
         sensor_data_t data;
         /*This API will block for available sensor data*/
-        sensor_get_data(uxCBT->sensor, &data, UI_BIT, portMAX_DELAY);
-        /*LED will indicates gas concentration*/
-        xTaskNotify(uxCBT->pLED_thread, data.ratio, eSetValueWithOverwrite);
-        /*Neopixel used to indicate temperature levels*/
-        xTaskNotify(uxCBT->pNEO_thread, data.temperature, eSetValueWithOverwrite);
-        /*LCD used to display all sensor data and inference result*/
-        xStreamBufferSend(uxCBT->myLCDstreamBuf, &data, sizeof(data), portMAX_DELAY);
+        if (sensor_get_data(uxCBT->sensor, &data, UI_BIT, portMAX_DELAY)) {
+            /*LED will indicates gas concentration*/
+            xTaskNotify(uxCBT->pLED_thread, data.ratio, eSetValueWithOverwrite);
+            /*Neopixel used to indicate temperature levels*/
+            xTaskNotify(uxCBT->pNEO_thread, data.temperature, eSetValueWithOverwrite);
+            /*LCD used to display all sensor data and inference result*/
+            xStreamBufferSend(uxCBT->myLCDstreamBuf, &data, sizeof(data), pdMS_TO_TICKS(0));
+        } else {
+            // No new data available, can perform other tasks or simply wait for the next notification
+        }
     }
 }
 

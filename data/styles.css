@@ -79,10 +79,149 @@ body {
 }
 
 #gauge_temp,
-#gauge_humi {
+#gauge_humi,
+#gauge_gas {
   width : 260px;
   height: 260px;
   margin: 0 auto;
+}
+
+/* Chart Controls & Filters */
+.chart-controls {
+  margin-top: 50px;
+  text-align: center;
+}
+
+.chart-controls h3 {
+  color: #2294F2;
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+.time-filter-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 10px 20px;
+  border: 2px solid #2294F2;
+  background: white;
+  color: #2294F2;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.filter-btn:hover {
+  background: #f0f8ff;
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, #2294F2, #1a75e6);
+  color: white;
+  box-shadow: 0 4px 12px rgba(34, 148, 242, 0.4);
+}
+
+/* Controls Container */
+.controls-container {
+  display        : flex;
+  gap            : 20px;
+  justify-content: center;
+  margin-top     : 40px;
+  flex-wrap      : wrap;
+}
+
+.control-btn {
+  padding           : 12px 24px;
+  font-size         : 16px;
+  font-weight       : 600;
+  border            : 2px solid;
+  border-radius     : 8px;
+  cursor            : pointer;
+  transition        : all 0.3s ease;
+  display           : flex;
+  align-items       : center;
+  gap               : 10px;
+  background-color  : white;
+  box-shadow        : 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.relay-btn {
+  color       : #FF6B6B;
+  border-color: #FF6B6B;
+}
+
+.relay-btn:hover {
+  background-color: #FF6B6B;
+  color           : white;
+}
+
+.relay-btn.active {
+  background-color: #FF6B6B;
+  color           : white;
+  box-shadow      : 0 6px 12px rgba(255, 107, 107, 0.3);
+}
+
+.buzzer-btn {
+  color       : #FFA500;
+  border-color: #FFA500;
+}
+
+.buzzer-btn:hover {
+  background-color: #FFA500;
+  color           : white;
+}
+
+.buzzer-btn.active {
+  background-color: #FFA500;
+  color           : white;
+  box-shadow      : 0 6px 12px rgba(255, 165, 0, 0.3);
+}
+
+/* Charts Container */
+.charts-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  width: 100%;
+  max-width: 600px;
+  transition: transform 0.3s ease;
+}
+
+.chart-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(34, 148, 242, 0.15);
+}
+
+.chart-card h3 {
+  color: #2294F2;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chart-card h3 i {
+  font-size: 24px;
+}
+
+.chart-card canvas {
+  max-height: 300px;
 }
 
 /* Device Page */

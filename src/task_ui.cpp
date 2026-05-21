@@ -15,6 +15,9 @@
 
 #define LED_PIN             48
 
+#define RELAY_PIN           46
+#define BUZZER_PIN          47
+
 #define LED_CYCLE_NORMAL    20 //20ms -> 50Hz
 #define LED_CYCLE_WARNING   10 //10ms -> 100Hz
 #define LED_CYCLE_CRITICAL  5 //5ms -> 200Hz
@@ -32,6 +35,8 @@ struct ui_control_block_t {
     xTaskHandle pLED_thread;
     xTaskHandle pNEO_thread;
     xTaskHandle pLCD_thread;
+    xTaskHandle pBUZZER_thread;
+    xTaskHandle pRELAY_thread;
 
     StreamBufferHandle_t myLCDstreamBuf;
 
@@ -150,10 +155,48 @@ void thread_lcd_display(void *pvParameters){
     }
 }
 
+void thread_buzzer(void *pvParameters){
+    while (1) {
+        // Wait for notification from the UI controller task
+        sensor_data_notify_t data;
+        xTaskNotifyWait(pdFALSE, ULONG_MAX, &data.u32, portMAX_DELAY);
+        float ratio = data.f;
+        if (ratio >= GAS_CRITICAL_THRESHOLD) {
+            // Activate buzzer at high frequency
+            tone(BUZZER_PIN, 2000); // 2kHz tone
+        } else if (ratio >= GAS_WARNING_THRESHOLD && ratio < GAS_CRITICAL_THRESHOLD) {
+            // Activate buzzer at medium frequency
+            tone(BUZZER_PIN, 1000); // 1kHz tone
+        } else if (ratio > 0 && ratio < GAS_WARNING_THRESHOLD) {
+            // Activate buzzer at low frequency
+            tone(BUZZER_PIN, 500); // 500Hz tone
+        } else {
+            // No gas detected, turn off buzzer
+            noTone(BUZZER_PIN);
+        }
+    }
+}
+
+void thread_relay(void* pvParameters){
+    while (1) {
+        // Wait for notification from the UI controller task
+        sensor_data_notify_t data;
+        xTaskNotifyWait(pdFALSE, ULONG_MAX, &data.u32, portMAX_DELAY);
+        float ratio = data.f;
+        if (ratio >= GAS_CRITICAL_THRESHOLD) {
+            digitalWrite(RELAY_PIN, HIGH);
+        } else {
+            digitalWrite(RELAY_PIN, LOW);
+        }
+    }
+}
+
 void ui_controller(void *pvParameters){
     ui_control_block_t *uxCBT = (ui_control_block_t *) pvParameters;
     xTaskCreate(thread_led_blinky, "LED Blinky", 1024, NULL, 2, &uxCBT->pLED_thread);
     xTaskCreate(thread_neo_pixel, "NeoPixel Control", 1024, NULL, 2, &uxCBT->pNEO_thread);
+    xTaskCreate(thread_relay, "Relay Control", 1024, NULL, 2, &uxCBT->pRELAY_thread);
+    xTaskCreate(thread_buzzer, "Buzzer Control", 1024, NULL, 2, &uxCBT->pBUZZER_thread);
     xTaskCreate(thread_lcd_display, "LCD Display", 1024 * 2, (void*)uxCBT, 2, &uxCBT->pLCD_thread);
     
     while (1) {

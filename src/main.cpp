@@ -2,6 +2,7 @@
 #include "task_webserver.h"
 #include "task_coreiot.h"
 #include "Arduino.h"
+#include "WiFi.h"
 // Include task additional
 #include "task_ui.h"
 #include "task_sensor.h"

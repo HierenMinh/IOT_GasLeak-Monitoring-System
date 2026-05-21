@@ -1,5 +1,7 @@
 #pragma once
 
+#include "task_sensor.h"
+
 #define GAS_WARNING_THRESHOLD 1.5f
 #define GAS_CRITICAL_THRESHOLD 2.0f
 

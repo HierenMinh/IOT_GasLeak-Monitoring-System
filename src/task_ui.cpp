@@ -115,11 +115,11 @@ void thread_lcd_display(void *pvParameters){
             case 0:
                 float temperature;
                 uxCBT->lcd.setCursor(0, 0);
-                char line1[8];
+                char tempLine[8];
                 xStreamBufferReceive(uxCBT->myLCDstreamBuf, &temperature, sizeof(float), portMAX_DELAY);
-                sprintf(line1, "T:%.2f", temperature);
+                sprintf(tempLine, "T:%.2f", temperature);
                 if (sensor_i2c_mutex_take(uxCBT->sensor, portMAX_DELAY)) {
-                    uxCBT->lcd.print(line1);
+                    uxCBT->lcd.print(tempLine);
                     sensor_i2c_mutex_give(uxCBT->sensor);
                 }
                 data_recv_count++;
@@ -127,11 +127,11 @@ void thread_lcd_display(void *pvParameters){
             case 1:
                 float humidity;
                 uxCBT->lcd.setCursor(9, 0);
-                char line1[8];
+                char humidityLine[8];
                 xStreamBufferReceive(uxCBT->myLCDstreamBuf, &humidity, sizeof(float), portMAX_DELAY);
-                sprintf(line1, "H:%.2f%%", humidity);
+                sprintf(humidityLine, "H:%.2f%%", humidity);
                 if (sensor_i2c_mutex_take(uxCBT->sensor, portMAX_DELAY)) {
-                    uxCBT->lcd.print(line1);
+                    uxCBT->lcd.print(humidityLine);
                     sensor_i2c_mutex_give(uxCBT->sensor);
                 }
                 data_recv_count++;
@@ -139,11 +139,11 @@ void thread_lcd_display(void *pvParameters){
             case 2:
                 float gas;
                 uxCBT->lcd.setCursor(0, 1);
-                char line2[12];
+                char gasLine[12];
                 xStreamBufferReceive(uxCBT->myLCDstreamBuf, &gas, sizeof(float), portMAX_DELAY);
-                sprintf(line2, "Gas:%.2f", gas);
+                sprintf(gasLine, "Gas:%.2f", gas);
                 if (sensor_i2c_mutex_take(uxCBT->sensor, portMAX_DELAY)) {
-                    uxCBT->lcd.print(line2);
+                    uxCBT->lcd.print(gasLine);
                     sensor_i2c_mutex_give(uxCBT->sensor);
                 }
                 data_recv_count = 0;

@@ -1,5 +1,5 @@
 #include "task_tinyml.h"
-#include "dht_anomaly_model.h"
+#include "gas_leak_model.h"
 
 void tinyml_init(sensor_handle_t sensor) {
     // Create the TinyML task and pass the sensor handle as parameter
@@ -14,7 +14,7 @@ void task_tinyml(void *pvParameters){
     tflite::MicroErrorReporter micro_error_reporter;
     tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 
-    const tflite::Model* model = tflite::GetModel(dht_anomaly_model_tflite);
+    const tflite::Model* model = tflite::GetModel(gas_leak_model_tflite);
 
     if (model->version() != TFLITE_SCHEMA_VERSION) {
         error_reporter->Report("Model schema mismatch");

@@ -148,7 +148,7 @@ void thread_neo_pixel(void *pvParameters)
  * Receives full sensor_data_t records from the stream buffer
  * and renders them on the 16×2 LCD.
  * Line 0: "T:23.4C  H:45.6%"
- * Line 1: "Gas:123.45 R:1.23"
+ * Line 1: "Gas:123.45"
  * ───────────────────────────────────────────────────────────── */
 void thread_lcd_display(void *pvParameters)
 {
@@ -181,8 +181,8 @@ void thread_lcd_display(void *pvParameters)
             char line2[17];
             snprintf(line1, sizeof(line1), "T:%.1fC H:%.1f%%",
                      recvData.temperature, recvData.humidity);
-            snprintf(line2, sizeof(line2), "Gas:%.2f R:%.2f",
-                     recvData.gas, recvData.ratio);
+            snprintf(line2, sizeof(line2), "Gas:%.2f",
+                     recvData.gas);
 
             char paddedLine1[17];
             char paddedLine2[17];

@@ -305,7 +305,7 @@ function saveSensorData(temp, humi, gas) {
     }
     
     localStorage.setItem('sensorHistory', JSON.stringify(sensorHistory));
-    updateCharts('1day');
+    updateCharts();
 }
 
 // Get data by time range
@@ -449,13 +449,16 @@ function initCharts() {
 
 // Update charts function
 function updateCharts(range) {
+    if (!range) range = '1day';
     const data = getDataByTimeRange(range);
     
-    // Update filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelector(`[data-range="${range}"]`).classList.add('active');
+    // Update filter buttons (no-op if buttons removed)
+    const btns = document.querySelectorAll('.filter-btn');
+    if (btns.length) {
+        btns.forEach(btn => btn.classList.remove('active'));
+        const sel = document.querySelector(`[data-range="${range}"]`);
+        if (sel) sel.classList.add('active');
+    }
     
     // Create time labels
     const labels = data.map(d => {

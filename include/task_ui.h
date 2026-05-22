@@ -11,6 +11,9 @@
 #define TEMP_HOT_THRESHOLD 40.0f
 #define TEMP_CRITICAL_THRESHOLD 50.0f
 
+#define HUM_WARNING_THRESHOLD 70.0f
+#define HUM_CRITICAL_THRESHOLD 85.0f
+
 typedef struct ui_data_t *ui_handle_t;
 
 /*this API initializes all UI components and thread that manage them*/

@@ -73,6 +73,14 @@ void webserver_task(void *pvParameters){
 
     server->begin();
     Serial.println("Webserver started");
+    Serial.print("Webserver URL (AP): http://");
+    Serial.print(WiFi.softAPIP());
+    Serial.println("/");
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.print("Webserver URL (STA): http://");
+        Serial.print(WiFi.localIP());
+        Serial.println("/");
+    }
 
     sensor_data_t data;
     while(1){

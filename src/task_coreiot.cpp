@@ -105,6 +105,10 @@ void task_coreiot(void *pvParameters)
         if (sensor_get_data(sensor, &data, COREIOT_BIT, portMAX_DELAY)){
             TickType_t now = xTaskGetTickCount();
             if ((now - lastPublishTick) < publishInterval) {
+                /* Too soon to publish again — run MQTT loop and yield
+                   briefly to avoid starving other tasks / watchdog. */
+                client.loop();
+                vTaskDelay(pdMS_TO_TICKS(10));
                 continue;
             }
 
@@ -119,13 +123,19 @@ void task_coreiot(void *pvParameters)
             serializeJson(doc, jsonBuffer);
 
             if (client.connected()){
-                client.publish("v1/devices/me/telemetry", jsonBuffer);
-                Serial.println("Published telemetry data to CoreIOT");
+                bool ok = client.publish("v1/devices/me/telemetry", jsonBuffer);
+                if (ok) {
+                    Serial.println("Published telemetry data to CoreIOT");
+                } else {
+                    Serial.println("Failed to publish telemetry to CoreIOT");
+                }
                 lastPublishTick = now;
             }
         } else {
             // No data (shouldn't happen with portMAX_DELAY), yield
             vTaskDelay(pdMS_TO_TICKS(100));
         }
+        /* Small yield to keep scheduler responsive in case of tight loops */
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }

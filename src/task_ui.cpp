@@ -272,7 +272,7 @@ void ui_controller(void *pvParameters)
                 xStreamBufferSend(uxCBT->myLCDstreamBuf,
                                   &data,
                                   sizeof(data),
-                                  pdMS_TO_TICKS(0));
+                                  pdMS_TO_TICKS(100));
             }
         }
     }
@@ -288,7 +288,7 @@ void ui_init(sensor_handle_t sensor)
     myCBT.sensor = sensor;
 
     Serial.println("Scanning I2C bus...");
-    Wire.begin();
+    // Do not call Wire.begin() here — I2C already initialised in sensor_init()
     uint8_t lcd_addr_found = 0;
     for (uint8_t addr = 0x08; addr < 0x78; addr++) {
         Wire.beginTransmission(addr);

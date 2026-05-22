@@ -12,6 +12,7 @@
 void setup()
 {
     Serial.begin(115200);
+    Serial.println("Booting IOT GasLeak monitor...");
     check_info_File(false);
     //Initialize sensor and UI tasks
     sensor_handle_t sensor;

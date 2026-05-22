@@ -7,7 +7,7 @@
 #define BASELINE_SAMPLES 100
 #define SAMPLE_INTERVAL_MS 100
 #define MQ2_WARMUP_MS 10000
-#define READ_INTERVAL_MS 1000
+#define READ_INTERVAL_MS 500
 
 #define I2C_SDA 11
 #define I2C_SCL 12
@@ -68,7 +68,7 @@ bool sensor_get_data(sensor_handle_t handle, sensor_data_t *data, EventBits_t my
         return false;
     }
 
-    if (xEventGroupGetBits(handle->event_group) & myBits == 0) {
+    if ((xEventGroupGetBits(handle->event_group) & myBits) == 0) {
         if (xQueuePeek(handle->queue, data, timeout) == pdTRUE) {
             xEventGroupSetBits(handle->event_group, myBits);
             return true;
@@ -93,21 +93,28 @@ void sensor_task(void *pvParameters){
 
         sensor_data_t data;
 
-        if (sensor_i2c_mutex_take(sensor, pdMS_TO_TICKS(0))) {
+        if (sensor_i2c_mutex_take(sensor, pdMS_TO_TICKS(100))) {
             sensor->dht20.read();
+            data.temperature = sensor->dht20.getTemperature();
+            data.humidity = sensor->dht20.getHumidity();
             sensor_i2c_mutex_give(sensor);
         } else {
             Serial.println("Failed to take I2C mutex for DHT20");
             continue;
         }
 
-        data.temperature = sensor->dht20.getTemperature();
-        data.humidity = sensor->dht20.getHumidity();
         data.gas = sensor->mq2.readGas();
+
+        // Debug prints to help identify NaN sources
+        Serial.printf("Sensor raw - Temp: %.2f, Humi: %.2f, Gas: %.4f, Baseline: %.4f\n",
+                      data.temperature, data.humidity, data.gas, sensor->gas_baseline);
         data.ratio = data.gas / sensor->gas_baseline;
 
         if (isnan(data.temperature) || isnan(data.humidity) || isnan(data.gas)) {
             Serial.println("Failed to read from sensors!");
+            if (isnan(sensor->gas_baseline) || sensor->gas_baseline <= 0.0f) {
+                Serial.println("Invalid gas baseline detected; keep previous baseline and retry later.");
+            }
             continue;
         }
 
@@ -123,14 +130,9 @@ void sensor_task(void *pvParameters){
         avg_data.gas = accumulated_data.gas / sample_count;
         avg_data.ratio = accumulated_data.ratio / sample_count;
 
-        EventBits_t uxMyBits = xEventGroupWaitBits(sensor->event_group, uxBitsToWait, pdTRUE, pdTRUE, pdMS_TO_TICKS(0));
+        xEventGroupWaitBits(sensor->event_group, uxBitsToWait, pdTRUE, pdTRUE, pdMS_TO_TICKS(0));
 
-        if ((uxMyBits & uxBitsToWait) == uxBitsToWait) {
-            xQueueReceive(sensor->queue, NULL, pdMS_TO_TICKS(0));
-        }
-
-        BaseType_t result = xQueueSend(sensor->queue, &avg_data, 0);
-        if (result == pdPASS)
+        if (xQueueOverwrite(sensor->queue, &avg_data) == pdPASS)
         {
             memset(&accumulated_data, 0, sizeof(accumulated_data));
             sample_count = 0;
@@ -153,10 +155,10 @@ void sensor_init(sensor_handle_t *handle)
         1,      // Ro (temporary)
         3.3,    // ESP32 voltage
         4095.0, // ESP32 ADC resolution
-        0,0,0,
-        0,0,0);
+        200.0, 1000.0, 10000.0,   // curve X points (ppm)
+        2.0,    1.0,    0.1);     // curve Y points (Rs/Ro ratios)
 
-    sensor.queue = xQueueCreate(10, sizeof(sensor_data_t));
+    sensor.queue = xQueueCreate(1, sizeof(sensor_data_t));
     if (sensor.queue == NULL) {
         Serial.println("Failed to create sensor queue");
         return;

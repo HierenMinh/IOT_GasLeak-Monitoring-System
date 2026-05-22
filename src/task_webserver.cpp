@@ -46,6 +46,9 @@ void webserver_task(void *pvParameters){
             if (n > 0) {
                 ws->textAll(buf);
             }
+        } else {
+            // No new data for webserver: yield to avoid tight-loop and watchdog
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
     }
 }

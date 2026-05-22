@@ -3,7 +3,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 
-#define MQ2PIN 35 // mq2 pin declaration
+#define MQ2PIN 1 // mq2 pin declaration
 
 typedef struct {
     float temperature = 0.0f;

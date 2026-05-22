@@ -2,6 +2,8 @@
 
 SemaphoreHandle_t xBinarySemaphoreInternet = nullptr;
 
+static const TickType_t WIFI_CONNECT_TIMEOUT = pdMS_TO_TICKS(15000);
+
 void startAP()
 {
     WiFi.mode(WIFI_AP);
@@ -14,10 +16,14 @@ void startSTA()
 {
     if (WIFI_SSID.isEmpty())
     {
-        vTaskDelete(NULL);
+        Serial.println("WiFi SSID is empty, switching to AP mode");
+        startAP();
+        return;
     }
 
     WiFi.mode(WIFI_STA);
+    Serial.print("Connecting to WiFi SSID: ");
+    Serial.println(WIFI_SSID);
 
     if (WIFI_PASS.isEmpty())
     {
@@ -28,12 +34,24 @@ void startSTA()
         WiFi.begin(WIFI_SSID.c_str(), WIFI_PASS.c_str());
     }
 
+    TickType_t startTick = xTaskGetTickCount();
     while (WiFi.status() != WL_CONNECTED)
     {
+        if ((xTaskGetTickCount() - startTick) >= WIFI_CONNECT_TIMEOUT)
+        {
+            Serial.println("WiFi connect timeout, starting AP mode");
+            startAP();
+            return;
+        }
+        Serial.println("Waiting for WiFi connection...");
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
+    Serial.print("WiFi connected, IP: ");
+    Serial.println(WiFi.localIP());
     // Give a semaphore here
-    xSemaphoreGive(xBinarySemaphoreInternet);
+    if (xBinarySemaphoreInternet != nullptr) {
+        xSemaphoreGive(xBinarySemaphoreInternet);
+    }
 }
 
 bool Wifi_reconnect()

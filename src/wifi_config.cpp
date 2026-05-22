@@ -1,5 +1,7 @@
 #include "wifi_config.h"
 
+SemaphoreHandle_t xBinarySemaphoreInternet = nullptr;
+
 void startAP()
 {
     WiFi.mode(WIFI_AP);

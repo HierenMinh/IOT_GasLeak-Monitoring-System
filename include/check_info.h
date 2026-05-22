@@ -1,11 +1,12 @@
 #ifndef __CHECK_INFO_H__
 #define __CHECK_INFO_H__
 
-#include "wifi_config.h"
+#include "WiFi.h"
 #include "ESPAsyncWebServer.h"
 #include "ArduinoJson.h"
 #include "AsyncTCP.h"
 #include "LittleFS.h"
+#include "wifi_config.h"
 
 extern String WIFI_SSID;
 extern String WIFI_PASS;

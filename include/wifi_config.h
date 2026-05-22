@@ -12,5 +12,6 @@ extern SemaphoreHandle_t xBinarySemaphoreInternet;
 
 bool Wifi_reconnect();
 void startAP();
+void startSTA();
 
 #endif /* __WIFI_CONFIG_H__ */

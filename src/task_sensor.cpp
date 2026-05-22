@@ -141,6 +141,9 @@ void sensor_task(void *pvParameters){
 void sensor_init(sensor_handle_t *handle)
 {
     static sensor_t sensor;
+    if (handle != NULL) {
+        *handle = &sensor;
+    }
     sensor.wire = &Wire;
     (*sensor.wire).begin(I2C_SDA, I2C_SCL);
     sensor.dht20.begin();

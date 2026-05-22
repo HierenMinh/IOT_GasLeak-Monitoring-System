@@ -1,5 +1,11 @@
 #include "check_info.h"
 
+String WIFI_SSID = "";
+String WIFI_PASS = "";
+String CORE_IOT_TOKEN = "";
+String CORE_IOT_SERVER = "";
+String CORE_IOT_PORT = "";
+
 void Load_info_File()
 {
   File file = LittleFS.open("/info.dat", "r");
@@ -79,6 +85,11 @@ bool check_info_File(bool check)
       startAP();
     }
     return false;
+  }
+
+  if (!check)
+  {
+    startSTA();
   }
   return true;
 }

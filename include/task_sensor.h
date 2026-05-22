@@ -11,6 +11,7 @@ typedef struct {
     float gas = 0.0f;
     float gas_baseline = 0.0f;
     float ratio = 0.0f;
+        int score = 0;
 } sensor_data_t;
 
 typedef struct sensor_t *sensor_handle_t;

@@ -1,23 +1,8 @@
-<<<<<<< HEAD
-=======
 #include "task_tinyml.h"
-#include "task_sensor.h"
 #include "dht_anomaly_model.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include <Arduino.h>
-
-#include <TensorFlowLite_ESP32.h>
-#include "tensorflow/lite/micro/all_ops_resolver.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
-#include "tensorflow/lite/micro/micro_interpreter.h"
-#include "tensorflow/lite/micro/system_setup.h"
-#include "tensorflow/lite/schema/schema_generated.h"
-
 
 void task_tinyml(void *pvParameters){
-    // pvParameters is expected to be a sensor_handle_t
-    sensor_handle_t sensor = (sensor_handle_t) pvParameters;
+    sensor_handle_t sensor = (sensor_handle_t)pvParameters;
     // Setup TensorFlow Lite
     constexpr int kTensorArenaSize = 32 * 1024; // Adjust based on model requirements
 
@@ -72,8 +57,9 @@ void task_tinyml(void *pvParameters){
 
     while (1){
         sensor_data_t data;
-        // Use sensor_get_data to obtain averaged sensor data for TinyML
-        if (!sensor_get_data(sensor, &data, TINYML_BIT, portMAX_DELAY)){
+        // Read sensor data from the shared sensor interface
+        if (!sensor_get_data(sensor, &data, TINYML_BIT, portMAX_DELAY)) {
+            // No data available, wait and retry
             continue;
         }
 
@@ -111,18 +97,11 @@ void task_tinyml(void *pvParameters){
             predicted_class = 2;
         }
 
-        // Currently send inference result back by notifying via sensor event bits
-        // (Could be extended to a dedicated queue if needed)
-        sensor_data_t result;
-        result.temperature = data.temperature;
-        result.humidity = data.humidity;
-        // There is no shared queue declared for anomaly results in current codebase.
-        // For now just print the predicted class; integration point available here.
-        Serial.printf("Anomaly result - class:%d T:%.2f H:%.2f\n", predicted_class, result.temperature, result.humidity);
+        // Attach predicted class to data and log it
+        data.score = predicted_class;
 
-        // Debug: Print output scores
+        // Print output scores
         Serial.printf("TinyML Output - Normal: %.4f, Warning: %.4f, Critical: %.4f, Predicted Class: %d\n",
                       normal_score, warning_score, critical_score, predicted_class);
     }
 }
->>>>>>> 50dba553822c3a2b15713e4754954e235edbddfc

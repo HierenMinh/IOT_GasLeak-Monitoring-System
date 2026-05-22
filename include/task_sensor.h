@@ -40,3 +40,7 @@ void sensor_i2c_mutex_give(sensor_handle_t sensor);
         timeout: The timeout value, in ticks, to wait for data to become available. Use portMAX_DELAY to wait indefinitely.
 @returns: true if data is available, false otherwise */
 bool sensor_get_data(sensor_handle_t handle, sensor_data_t *data, EventBits_t myBits, TickType_t timeout);
+
+/* Update the latest sensor record's score (e.g., anomaly class) produced by TinyML.
+        Returns true if the queue held a record and was updated, false otherwise. */
+bool sensor_update_score(sensor_handle_t handle, int score);

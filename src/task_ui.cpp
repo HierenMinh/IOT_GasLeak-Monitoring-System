@@ -226,8 +226,8 @@ void thread_lcd_display(void *pvParameters)
             char line2[17];
             snprintf(line1, sizeof(line1), "T:%.1fC H:%.1f%%",
                      recvData.temperature, recvData.humidity);
-            snprintf(line2, sizeof(line2), "Gas:%.2f",
-                     recvData.gas);
+            snprintf(line2, sizeof(line2), "Gas:%.1f",
+                     recvData.ratio);
 
             char paddedLine1[17];
             char paddedLine2[17];

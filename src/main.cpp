@@ -7,6 +7,7 @@
 #include "task_sensor.h"
 #include "check_info.h"
 #include "wifi.h"
+#include "task_tinyml.h"
 
 
 void setup()
@@ -20,6 +21,7 @@ void setup()
     ui_init(sensor);
     webserver_init(sensor);
     coreiot_init(sensor);
+    tinyml_init(sensor);
 }
 
 void loop()

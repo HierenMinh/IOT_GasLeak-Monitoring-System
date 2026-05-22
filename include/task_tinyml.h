@@ -18,4 +18,7 @@
 
 void task_tinyml(void *pvParameters);
 
+/* Initialize TinyML task. Pass the sensor handle so the task can read sensor data. */
+void tinyml_init(sensor_handle_t sensor);
+
 #endif /* __TASK_TINYML_H__ */

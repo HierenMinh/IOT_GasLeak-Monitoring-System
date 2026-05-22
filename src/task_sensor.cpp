@@ -77,6 +77,21 @@ bool sensor_get_data(sensor_handle_t handle, sensor_data_t *data, EventBits_t my
     return false;
 }
 
+bool sensor_update_score(sensor_handle_t handle, int score)
+{
+    if (handle == NULL) return false;
+
+    sensor_data_t cur = {};
+    /* Try to peek current record without blocking */
+    if (xQueuePeek(handle->queue, &cur, 0) == pdTRUE) {
+        cur.score = score;
+        if (xQueueOverwrite(handle->queue, &cur) == pdPASS) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void sensor_task(void *pvParameters){
     sensor_t *sensor = (sensor_t *) pvParameters;
 
@@ -127,8 +142,20 @@ void sensor_task(void *pvParameters){
         avg_data.gas = accumulated_data.gas / sample_count;
         avg_data.ratio = accumulated_data.ratio / sample_count;
 
+        /* Preserve any predicted score previously set by TinyML when
+           overwriting the queue with the averaged sensor record. */
+        sensor_data_t cur = {};
+        if (xQueuePeek(sensor->queue, &cur, 0) == pdTRUE) {
+            avg_data.score = cur.score;
+        } else {
+            avg_data.score = 0;
+        }
+
         if (xQueueOverwrite(sensor->queue, &avg_data) == pdPASS)
         {
+            /* Log averaged sensor values including predicted class */
+            Serial.printf("Sensor Avg - Temp: %.2f, Humi: %.2f, Gas: %.4f, Ratio: %.4f, Predicted: %d\n",
+                          avg_data.temperature, avg_data.humidity, avg_data.gas, avg_data.ratio, avg_data.score);
             memset(&accumulated_data, 0, sizeof(accumulated_data));
             sample_count = 0;
         }

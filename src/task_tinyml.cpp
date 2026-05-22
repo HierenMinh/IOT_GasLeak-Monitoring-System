@@ -1,6 +1,11 @@
 #include "task_tinyml.h"
 #include "dht_anomaly_model.h"
 
+void tinyml_init(sensor_handle_t sensor) {
+    // Create the TinyML task and pass the sensor handle as parameter
+    xTaskCreate(task_tinyml, "TinyML Task", 8192, (void*)sensor, 1, NULL);
+}
+
 void task_tinyml(void *pvParameters){
     sensor_handle_t sensor = (sensor_handle_t)pvParameters;
     // Setup TensorFlow Lite
@@ -67,8 +72,7 @@ void task_tinyml(void *pvParameters){
         input->data.f[0] = data.temperature;
         input->data.f[1] = data.humidity;
 
-        // Debug: Print input values
-        Serial.printf("TinyML Input - Temp: %.2f, Humi: %.2f\n", data.temperature, data.humidity);
+        // Do not print logs from TinyML task (sensor will log results)
 
         // Run inference
         TfLiteStatus invoke_status = interpreter->Invoke();
@@ -99,9 +103,14 @@ void task_tinyml(void *pvParameters){
 
         // Attach predicted class to data and log it
         data.score = predicted_class;
+        // Write predicted score back into shared sensor record so other
+        // consumers (e.g., CoreIoT) can publish it.
+        if (sensor != NULL) {
+            (void)sensor_update_score(sensor, predicted_class);
+        }
 
         // Print output scores
-        Serial.printf("TinyML Output - Normal: %.4f, Warning: %.4f, Critical: %.4f, Predicted Class: %d\n",
-                      normal_score, warning_score, critical_score, predicted_class);
+        // Serial.printf("TinyML Output - Normal: %.4f, Warning: %.4f, Critical: %.4f, Predicted Class: %d\n",
+        //               normal_score, warning_score, critical_score, predicted_class);
     }
 }

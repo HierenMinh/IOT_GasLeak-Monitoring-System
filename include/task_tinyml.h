@@ -1,8 +1,14 @@
 #ifndef __TASK_TINYML_H__
 #define __TASK_TINYML_H__
 
-#include "variable.h"
-
+#include "task_sensor.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "freertos/event_groups.h"
+#include "check_info.h"
+#include "wifi_config.h"
+#include <Arduino.h>
 #include <TensorFlowLite_ESP32.h>
 #include "tensorflow/lite/micro/all_ops_resolver.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"

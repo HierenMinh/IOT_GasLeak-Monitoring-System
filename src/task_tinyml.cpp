@@ -2,6 +2,7 @@
 #include "dht_anomaly_model.h"
 
 void task_tinyml(void *pvParameters){
+    sensor_handle_t sensor = (sensor_handle_t)pvParameters;
     // Setup TensorFlow Lite
     constexpr int kTensorArenaSize = 32 * 1024; // Adjust based on model requirements
 
@@ -56,9 +57,9 @@ void task_tinyml(void *pvParameters){
 
     while (1){
         sensor_data_t data;
-
-        // If data is not received, skip this iteration and wait for the next one
-        if (xQueueReceive(qSensorTinyML, &data, portMAX_DELAY) != pdTRUE){
+        // Read sensor data from the shared sensor interface
+        if (!sensor_get_data(sensor, &data, TINYML_BIT, portMAX_DELAY)) {
+            // No data available, wait and retry
             continue;
         }
 
@@ -96,14 +97,10 @@ void task_tinyml(void *pvParameters){
             predicted_class = 2;
         }
 
-        // Send inference result to the anomaly result queue
-        sensor_data_t result;
-        result.score = predicted_class;
-        result.temperature = data.temperature;
-        result.humidity = data.humidity;
-        xQueueOverwrite(qAnomalyResult, &result);
+        // Attach predicted class to data and log it
+        data.score = predicted_class;
 
-        // Debug: Print output scores
+        // Print output scores
         Serial.printf("TinyML Output - Normal: %.4f, Warning: %.4f, Critical: %.4f, Predicted Class: %d\n",
                       normal_score, warning_score, critical_score, predicted_class);
     }

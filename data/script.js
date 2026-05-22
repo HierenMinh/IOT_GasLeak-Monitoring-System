@@ -28,32 +28,50 @@ function initWebSocket() {
 function Send_Data(data) {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
         websocket.send(data);
-        console.log("📤 Gửi:", data);
+        console.log("📤 Sent:", data);
     } else {
-        console.warn("⚠️ WebSocket chưa sẵn sàng!");
-        alert("⚠️ WebSocket chưa kết nối!");
+        console.warn("⚠️ WebSocket not ready!");
+        alert("⚠️ WebSocket not connected!");
     }
 }
 
 function onMessage(event) {
-    console.log("📩 Nhận:", event.data);
+    console.log("📩 Received:", event.data);
     try {
         var data = JSON.parse(event.data);
-        // Có thể thêm xử lý riêng nếu cần (ví dụ cập nhật trạng thái)
+        // Can add special handling if needed (e.g., update status)
 
         // ==================================================
-        // Kiểm tra xem có phải dữ liệu cảm biến không
+        // Check if sensor data
         if (data.type === "sensor_data") {
-            // Cập nhật đồng hồ đo với giá trị thật
-            // (Kiểm tra xem gaugeTemp và gaugeHumi đã được khởi tạo chưa)
+            // Update gauges with real values
+            // (Check if gaugeTemp, gaugeHumi, and gaugeGas are initialized)
             if (window.gaugeTemp && window.gaugeHumi) {
                 window.gaugeTemp.refresh(data.temperature);
                 window.gaugeHumi.refresh(data.humidity);
             }
+            
+            if (window.gaugeGas && data.gas !== undefined) {
+                window.gaugeGas.refresh(data.gas);
+            }
+            
+            // Save data to history
+            saveSensorData(data.temperature, data.humidity, data.gas || 0);
+        }
+        
+        // Check if control response
+        if (data.type === "control_response") {
+            if (data.device === "relay") {
+                relayState = data.state;
+                updateRelayButton();
+            } else if (data.device === "buzzer") {
+                buzzerState = data.state;
+                updateBuzzerButton();
+            }
         }
         // ==================================================
     } catch (e) {
-        console.warn("Không phải JSON hợp lệ:", event.data);
+        console.warn("Not valid JSON:", event.data);
     }
 }
 
@@ -61,6 +79,8 @@ function onMessage(event) {
 // ==================== UI NAVIGATION ====================
 let relayList = [];
 let deleteTarget = null;
+let relayState = false;
+let buzzerState = false;
 
 function showSection(id, event) {
     document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
@@ -72,11 +92,14 @@ function showSection(id, event) {
 
 // ==================== HOME GAUGES ====================
 window.onload = function () {
-    // Khởi tạo 2 đồng hồ đo và lưu vào biến toàn cục (window.)
-    // để các hàm khác có thể truy cập
+    // Generate demo data if not available
+    generateDemoData();
+    
+    // Initialize 2 gauges and save to global variable (window.)
+    // so other functions can access them
     window.gaugeTemp = new JustGage({
         id: "gauge_temp",
-        value: 0, // Giá trị ban đầu
+        value: 0, // Initial value
         min: -10,
         max: 50,
         donut: true,
@@ -89,7 +112,7 @@ window.onload = function () {
 
     window.gaugeHumi = new JustGage({
         id: "gauge_humi",
-        value: 0, // Giá trị ban đầu
+        value: 0, // Initial value
         min: 0,
         max: 100,
         donut: true,
@@ -97,14 +120,80 @@ window.onload = function () {
         gaugeWidthScale: 0.25,
         gaugeColor: "transparent",
         levelColorsGradient: true,
-        levelColors: ["#42A5F5", "#00BCD4", "#0288D1"]
     });
+
+    window.gaugeGas = new JustGage({
+        id: "gauge_gas",
+        value: 0, // Initial value
+        min: 0,
+        max: 10000,
+        donut: true,
+        pointer: false,
+        gaugeWidthScale: 0.25,
+        gaugeColor: "transparent",
+        levelColorsGradient: true,
+        levelColors: ["#90EE90", "#FFD700", "#FF6347"]
+    });
+
+    // Initialize charts
+    initCharts();
+    
+    // Update control button status
+    updateRelayButton();
+    updateBuzzerButton();
 
     // setInterval(() => {
     //     gaugeTemp.refresh(Math.floor(Math.random() * 15) + 20);
     //     gaugeHumi.refresh(Math.floor(Math.random() * 40) + 40);
     // }, 3000);
 };
+
+// ==================== RELAY & BUZZER CONTROL ====================
+function toggleRelay() {
+    relayState = !relayState;
+    const command = JSON.stringify({
+        type: "control",
+        device: "relay",
+        state: relayState
+    });
+    Send_Data(command);
+    updateRelayButton();
+}
+
+function toggleBuzzer() {
+    buzzerState = !buzzerState;
+    const command = JSON.stringify({
+        type: "control",
+        device: "buzzer",
+        state: buzzerState
+    });
+    Send_Data(command);
+    updateBuzzerButton();
+}
+
+function updateRelayButton() {
+    const btn = document.getElementById('relayBtn');
+    const status = document.getElementById('relayStatus');
+    if (relayState) {
+        btn.classList.add('active');
+        status.textContent = 'ON';
+    } else {
+        btn.classList.remove('active');
+        status.textContent = 'OFF';
+    }
+}
+
+function updateBuzzerButton() {
+    const btn = document.getElementById('buzzerBtn');
+    const status = document.getElementById('buzzerStatus');
+    if (buzzerState) {
+        btn.classList.add('active');
+        status.textContent = 'ON';
+    } else {
+        btn.classList.remove('active');
+        status.textContent = 'OFF';
+    }
+}
 
 
 // ==================== DEVICE FUNCTIONS ====================
@@ -192,5 +281,222 @@ document.getElementById("settingsForm").addEventListener("submit", function (e) 
     });
 
     Send_Data(settingsJSON);
-    alert("✅ Cấu hình đã được gửi đến thiết bị!");
+    alert("✅ Configuration sent to device!");
 });
+
+
+// ==================== CHART & HISTORY DATA ====================
+let tempChart, humiChart;
+let sensorHistory = JSON.parse(localStorage.getItem('sensorHistory')) || [];
+
+// Save sensor data
+function saveSensorData(temp, humi, gas) {
+    const now = new Date();
+    sensorHistory.push({
+        timestamp: now.getTime(),
+        temperature: temp,
+        humidity: humi,
+        gas: gas
+    });
+    
+    // Limit stored data (max 10080 points = 1 week if updated every minute)
+    if (sensorHistory.length > 10080) {
+        sensorHistory.shift();
+    }
+    
+    localStorage.setItem('sensorHistory', JSON.stringify(sensorHistory));
+    updateCharts('1day');
+}
+
+// Get data by time range
+function getDataByTimeRange(range) {
+    const now = new Date().getTime();
+    let startTime;
+    
+    switch(range) {
+        case '1day':
+            startTime = now - (24 * 60 * 60 * 1000);
+            break;
+        case '3days':
+            startTime = now - (3 * 24 * 60 * 60 * 1000);
+            break;
+        case '1week':
+            startTime = now - (7 * 24 * 60 * 60 * 1000);
+            break;
+        default:
+            startTime = now - (24 * 60 * 60 * 1000);
+    }
+    
+    return sensorHistory.filter(data => data.timestamp >= startTime);
+}
+
+// Initialize charts
+function initCharts() {
+    // Temperature chart
+    const tempCtx = document.getElementById('tempChart').getContext('2d');
+    tempChart = new Chart(tempCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Temperature (°C)',
+                data: [],
+                borderColor: '#FF6384',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 3,
+                pointBackgroundColor: '#FF6384'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { font: { size: 12 } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: -10,
+                    max: 50
+                }
+            }
+        }
+    });
+
+    // Humidity chart
+    const humiCtx = document.getElementById('humiChart').getContext('2d');
+    humiChart = new Chart(humiCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Humidity (%)',
+                data: [],
+                borderColor: '#36A2EB',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 3,
+                pointBackgroundColor: '#36A2EB'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { font: { size: 12 } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Gas chart
+    const gasCtx = document.getElementById('gasChart').getContext('2d');
+    gasChart = new Chart(gasCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Gas (ppm)',
+                data: [],
+                borderColor: '#FFA500',
+                backgroundColor: 'rgba(255, 165, 0, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 3,
+                pointBackgroundColor: '#FFA500'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { font: { size: 12 } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 10000
+                }
+            }
+        }
+    });
+
+    // Update charts with initial data
+    updateCharts('1day');
+}
+
+// Update charts function
+function updateCharts(range) {
+    const data = getDataByTimeRange(range);
+    
+    // Update filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-range="${range}"]`).classList.add('active');
+    
+    // Create time labels
+    const labels = data.map(d => {
+        const date = new Date(d.timestamp);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    });
+    
+    // Create value list
+    const temps = data.map(d => d.temperature);
+    const humis = data.map(d => d.humidity);
+    const gases = data.map(d => d.gas || 0);
+    
+    // Update temperature chart
+    tempChart.data.labels = labels;
+    tempChart.data.datasets[0].data = temps;
+    tempChart.update();
+    
+    // Update humidity chart
+    humiChart.data.labels = labels;
+    humiChart.data.datasets[0].data = humis;
+    humiChart.update();
+    
+    // Update gas chart
+    gasChart.data.labels = labels;
+    gasChart.data.datasets[0].data = gases;
+    gasChart.update();
+}
+
+// Generate demo data function (for testing, can be deleted later)
+function generateDemoData() {
+    if (sensorHistory.length > 0) return; // If data already exists, skip generation
+    
+    const now = new Date().getTime();
+    for (let i = 0; i < 168; i++) { // 168 hours = 1 week
+        sensorHistory.push({
+            timestamp: now - (i * 60 * 60 * 1000),
+            temperature: 20 + Math.sin(i / 24) * 5 + Math.random() * 3,
+            humidity: 50 + Math.cos(i / 24) * 15 + Math.random() * 5,
+            gas: 100 + Math.sin(i / 12) * 50 + Math.random() * 20
+        });
+    }
+    sensorHistory.reverse();
+    localStorage.setItem('sensorHistory', JSON.stringify(sensorHistory));
+}

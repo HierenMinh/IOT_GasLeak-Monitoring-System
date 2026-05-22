@@ -19,6 +19,7 @@ void setup()
     sensor_init(&sensor);
     ui_init(sensor);
     webserver_init(sensor);
+    coreiot_init(sensor);
 }
 
 void loop()

@@ -4,8 +4,17 @@ SemaphoreHandle_t xBinarySemaphoreInternet = nullptr;
 
 static const TickType_t WIFI_CONNECT_TIMEOUT = pdMS_TO_TICKS(15000);
 
+static void ensureInternetSemaphore()
+{
+    if (xBinarySemaphoreInternet == nullptr)
+    {
+        xBinarySemaphoreInternet = xSemaphoreCreateBinary();
+    }
+}
+
 void startAP()
 {
+    ensureInternetSemaphore();
     WiFi.mode(WIFI_AP);
     WiFi.softAP(String(SSID_AP), String(PASS_AP));
     Serial.print("AP IP: ");
@@ -14,6 +23,8 @@ void startAP()
 
 void startSTA()
 {
+    ensureInternetSemaphore();
+
     if (WIFI_SSID.isEmpty())
     {
         Serial.println("WiFi SSID is empty, switching to AP mode");
@@ -48,10 +59,7 @@ void startSTA()
     }
     Serial.print("WiFi connected, IP: ");
     Serial.println(WiFi.localIP());
-    // Give a semaphore here
-    if (xBinarySemaphoreInternet != nullptr) {
-        xSemaphoreGive(xBinarySemaphoreInternet);
-    }
+    xSemaphoreGive(xBinarySemaphoreInternet);
 }
 
 bool Wifi_reconnect()

@@ -68,11 +68,10 @@ bool sensor_get_data(sensor_handle_t handle, sensor_data_t *data, EventBits_t my
         return false;
     }
 
-    if ((xEventGroupGetBits(handle->event_group) & myBits) == 0) {
-        if (xQueuePeek(handle->queue, data, timeout) == pdTRUE) {
-            xEventGroupSetBits(handle->event_group, myBits);
-            return true;
-        }
+    (void)myBits;
+
+    if (xQueuePeek(handle->queue, data, timeout) == pdTRUE) {
+        return true;
     }
     /* Go through here means no new data is available */
     return false;
@@ -83,8 +82,6 @@ void sensor_task(void *pvParameters){
 
     sensor_data_t accumulated_data = {};
     uint64_t sample_count = 0;
-
-    EventBits_t uxBitsToWait = UI_BIT | TINYML_BIT | COREIOT_BIT | WEBSERVER_BIT;
 
     (*sensor).gas_baseline = mq2_get_baseline(sensor);
     while (1) {
@@ -129,8 +126,6 @@ void sensor_task(void *pvParameters){
         avg_data.humidity = accumulated_data.humidity / sample_count;
         avg_data.gas = accumulated_data.gas / sample_count;
         avg_data.ratio = accumulated_data.ratio / sample_count;
-
-        xEventGroupWaitBits(sensor->event_group, uxBitsToWait, pdTRUE, pdTRUE, pdMS_TO_TICKS(0));
 
         if (xQueueOverwrite(sensor->queue, &avg_data) == pdPASS)
         {

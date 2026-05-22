@@ -154,6 +154,10 @@ void thread_lcd_display(void *pvParameters)
 {
     ui_control_block_t *uxCBT = (ui_control_block_t *)pvParameters;
     sensor_data_t recvData;
+    sensor_data_t lastShownData = {};
+    bool hasLastShownData = false;
+    TickType_t lastLcdUpdateTick = 0;
+    const TickType_t lcdUpdateInterval = pdMS_TO_TICKS(1000);
 
     while (1) {
         if (xStreamBufferReceive(uxCBT->myLCDstreamBuf,
@@ -161,6 +165,18 @@ void thread_lcd_display(void *pvParameters)
                                  sizeof(sensor_data_t),
                                  portMAX_DELAY) == sizeof(sensor_data_t))
         {
+            TickType_t now = xTaskGetTickCount();
+            bool shouldUpdate = !hasLastShownData
+                                || (fabs(recvData.temperature - lastShownData.temperature) >= 0.2f)
+                                || (fabs(recvData.humidity - lastShownData.humidity) >= 0.5f)
+                                || (fabs(recvData.gas - lastShownData.gas) >= 5.0f)
+                                || (fabs(recvData.ratio - lastShownData.ratio) >= 0.02f)
+                                || ((now - lastLcdUpdateTick) >= lcdUpdateInterval);
+
+            if (!shouldUpdate) {
+                continue;
+            }
+
             char line1[17];
             char line2[17];
             snprintf(line1, sizeof(line1), "T:%.1fC H:%.1f%%",
@@ -168,13 +184,21 @@ void thread_lcd_display(void *pvParameters)
             snprintf(line2, sizeof(line2), "Gas:%.2f R:%.2f",
                      recvData.gas, recvData.ratio);
 
+            char paddedLine1[17];
+            char paddedLine2[17];
+            snprintf(paddedLine1, sizeof(paddedLine1), "%-16s", line1);
+            snprintf(paddedLine2, sizeof(paddedLine2), "%-16s", line2);
+
             if (sensor_i2c_mutex_take(uxCBT->sensor, portMAX_DELAY)) {
-                uxCBT->lcd.clear();
                 uxCBT->lcd.setCursor(0, 0);
-                uxCBT->lcd.print(line1);
+                uxCBT->lcd.print(paddedLine1);
                 uxCBT->lcd.setCursor(0, 1);
-                uxCBT->lcd.print(line2);
+                uxCBT->lcd.print(paddedLine2);
                 sensor_i2c_mutex_give(uxCBT->sensor);
+
+                lastShownData = recvData;
+                hasLastShownData = true;
+                lastLcdUpdateTick = now;
             }
         }
     }

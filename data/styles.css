@@ -657,6 +657,22 @@ header h1 {
   color: rgba(238, 245, 255, 0.92);
 }
 
+/* TinyML result card */
+.tinyml-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+}
+
+#tinyml_label {
+  font-size: 44px;
+  font-weight: 800;
+  color: #4CAF50;
+  letter-spacing: -0.02em;
+}
+
 .gauge-card h2 i,
 .chart-card h3 i,
 .settings-card h2 i {

@@ -120,8 +120,8 @@ void webserver_task(void *pvParameters){
     while(1){
         if (sensor_get_data(sensor, &data, WEBSERVER_BIT, portMAX_DELAY)){
             char buf[256];
-            int n = snprintf(buf, sizeof(buf), "{\"type\":\"sensor_data\",\"temperature\":%.2f,\"humidity\":%.2f,\"gas\":%.2f}",
-                             data.temperature, data.humidity, data.gas);
+            int n = snprintf(buf, sizeof(buf), "{\"type\":\"sensor_data\",\"temperature\":%.2f,\"humidity\":%.2f,\"gas\":%.2f,\"score\":%d}",
+                             data.temperature, data.humidity, data.gas, data.score);
             if (n > 0) {
                 ws->textAll(buf);
             }

@@ -57,6 +57,30 @@ function onMessage(event) {
             
             // Save data to history
             saveSensorData(data.temperature, data.humidity, data.gas || 0);
+
+            // Display TinyML score/label if present
+            if (data.score !== undefined) {
+                let label = 'Normal';
+                if (data.score === 1) label = 'Warning';
+                else if (data.score === 2) label = 'Critical';
+
+                const el = document.getElementById('tinyml_label');
+                if (el) {
+                    el.textContent = label;
+                    el.style.color = (data.score === 2) ? '#FF3B30' : (data.score === 1 ? '#FF9500' : '#4CAF50');
+                }
+
+                // Optional: flash an alert for critical
+                if (data.score === 2) {
+                    // simple visual attention: change background briefly
+                    const card = document.getElementById('tinyml_result');
+                    if (card) {
+                        card.style.transition = 'background-color 0.3s';
+                        card.style.backgroundColor = 'rgba(255,59,48,0.08)';
+                        setTimeout(() => { card.style.backgroundColor = ''; }, 1200);
+                    }
+                }
+            }
         }
         
         // Check if control response

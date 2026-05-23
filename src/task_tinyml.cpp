@@ -74,8 +74,8 @@ void task_tinyml(void *pvParameters){
         input->data.f[2] = data.gas;
 
         // Log inputs so we can verify model receives gas
-        Serial.printf("[TINYML] Inputs - Temp: %.2f, Humi: %.2f, Gas: %.4f\n",
-                  data.temperature, data.humidity, data.gas);
+        // Serial.printf("[TINYML] Inputs - Temp: %.2f, Humi: %.2f, Gas: %.4f\n",
+        //           data.temperature, data.humidity, data.gas);
 
         // Run inference
         TfLiteStatus invoke_status = interpreter->Invoke();
@@ -112,7 +112,7 @@ void task_tinyml(void *pvParameters){
             (void)sensor_update_score(sensor, predicted_class);
         }
 
-        Serial.printf("[TINYML] Output - Normal: %.4f, Warning: %.4f, Critical: %.4f, Predicted Class: %d\n",
-                  normal_score, warning_score, critical_score, predicted_class);
+        // Serial.printf("[TINYML] Output - Normal: %.4f, Warning: %.4f, Critical: %.4f, Predicted Class: %d\n",
+        //           normal_score, warning_score, critical_score, predicted_class);
     }
 }

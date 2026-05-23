@@ -11,6 +11,22 @@
 static AsyncWebServer* server = nullptr;
 static AsyncWebSocket* ws = nullptr;
 
+static bool fanRelayState = false;
+static bool gasValveRelayState = false;
+
+static void sendControlResponse(const char *device, bool state){
+    if (ws == nullptr) {
+        return;
+    }
+
+    char response[128];
+    snprintf(response, sizeof(response),
+             "{\"type\":\"control_response\",\"device\":\"%s\",\"state\":%s}",
+             device,
+             state ? "true" : "false");
+    ws->textAll(response);
+}
+
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type,
                void * arg, uint8_t *data, size_t len){
     if(type == WS_EVT_CONNECT){
@@ -51,6 +67,24 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
                 Serial.println("Saving Wi-Fi and CoreIoT settings...");
                 Save_info_File(ssid, password, token, server, port);
+            } else {
+                const char *type = doc["type"] | "";
+                if (strcmp(type, "control") == 0) {
+                    const char *device = doc["device"] | "";
+                    bool state = doc["state"] | false;
+
+                    if (strcmp(device, "fan_relay") == 0 || strcmp(device, "relay") == 0) {
+                        fanRelayState = state;
+                        Serial.printf("Fan relay state: %s\n", state ? "ON" : "OFF");
+                        sendControlResponse("fan_relay", fanRelayState);
+                    } else if (strcmp(device, "gas_valve_relay") == 0 || strcmp(device, "buzzer") == 0) {
+                        gasValveRelayState = state;
+                        Serial.printf("Gas valve relay state: %s\n", state ? "ON" : "OFF");
+                        sendControlResponse("gas_valve_relay", gasValveRelayState);
+                    } else {
+                        Serial.printf("Unknown control device: %s\n", device);
+                    }
+                }
             }
         }
     }

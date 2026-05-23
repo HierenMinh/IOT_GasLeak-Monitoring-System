@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YOLO UNO Dashboard</title>
+  <title>Gas Leak Control Center</title>
 
   <!-- CSS -->
   <link rel="stylesheet" href="styles.css">
@@ -37,6 +37,12 @@
     <div id="home" class="section fade-in">
       <header>
         <h1>IOT GasLeak Monitoring System</h1>
+        <p class="hero-subtitle">Real-time gas monitoring, automation, and relay control in one streamlined dashboard.</p>
+        <div class="hero-chips">
+          <div class="hero-chip live"><span></span> Live sensor stream</div>
+          <div class="hero-chip"><span></span> Fan relay ready</div>
+          <div class="hero-chip"><span></span> Gas valve relay ready</div>
+        </div>
       </header>
 
       <!-- Gauges -->
@@ -57,13 +63,13 @@
         </div>
       </div>
 
-      <!-- Relay and Buzzer Controls -->
+      <!-- Relay Controls -->
       <div class="controls-container">
-        <button class="control-btn relay-btn" id="relayBtn" onclick="toggleRelay()">
-          <i class="fa-solid fa-power-off"></i> Relay: <span id="relayStatus">OFF</span>
+        <button class="control-btn fan-btn" id="fanRelayBtn" onclick="toggleFanRelay()">
+          <i class="fa-solid fa-fan"></i> Fan Relay: <span id="fanRelayStatus">OFF</span>
         </button>
-        <button class="control-btn buzzer-btn" id="buzzerBtn" onclick="toggleBuzzer()">
-          <i class="fa-solid fa-volume-high"></i> Buzzer: <span id="buzzerStatus">OFF</span>
+        <button class="control-btn valve-btn" id="gasValveRelayBtn" onclick="toggleGasValveRelay()">
+          <i class="fa-solid fa-fire-flame-simple"></i> Gas Valve Relay: <span id="gasValveRelayStatus">OFF</span>
         </button>
       </div>
 
@@ -92,7 +98,7 @@
     </div>
 
     <!-- SETTINGS PAGE -->
-    <div id="settings" class="section settings-section" style="display:none;">
+    <div id="settings" class="section settings-section is-hidden">
       <div class="settings-card">
         <h2><i class="fa-solid fa-gear"></i> Device Configuration</h2>
         <p>Enter your Wi-Fi information and Core IoT connection details below.</p>
@@ -132,7 +138,7 @@
   </div>
 
   <!-- ADD RELAY DIALOG -->
-  <div id="addRelayDialog" class="dialog-overlay" style="display:none;">
+  <div id="addRelayDialog" class="dialog-overlay is-hidden">
     <div class="dialog fade-in">
       <h3><i class="fa-solid fa-plug"></i> Add New Relay</h3>
       <p>Enter relay name and GPIO pin</p>
@@ -150,7 +156,7 @@
   </div>
 
   <!-- DELETE CONFIRMATION DIALOG -->
-<div id="confirmDeleteDialog" class="dialog-overlay" style="display:none;">
+<div id="confirmDeleteDialog" class="dialog-overlay is-hidden">
     <div class="dialog warning fade-in">
       <h3><i class="fa-solid fa-triangle-exclamation"></i> Confirm Delete</h3>
       <p>Are you sure you want to delete this relay?</p>

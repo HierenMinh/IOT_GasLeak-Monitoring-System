@@ -61,12 +61,12 @@ function onMessage(event) {
         
         // Check if control response
         if (data.type === "control_response") {
-            if (data.device === "relay") {
-                relayState = data.state;
-                updateRelayButton();
-            } else if (data.device === "buzzer") {
-                buzzerState = data.state;
-                updateBuzzerButton();
+            if (data.device === "fan_relay") {
+                fanRelayState = data.state;
+                updateFanRelayButton();
+            } else if (data.device === "gas_valve_relay") {
+                gasValveRelayState = data.state;
+                updateGasValveRelayButton();
             }
         }
         // ==================================================
@@ -79,12 +79,12 @@ function onMessage(event) {
 // ==================== UI NAVIGATION ====================
 let relayList = [];
 let deleteTarget = null;
-let relayState = false;
-let buzzerState = false;
+let fanRelayState = false;
+let gasValveRelayState = false;
 
 function showSection(id, event) {
-    document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
-    document.getElementById(id).style.display = id === 'settings' ? 'flex' : 'block';
+    document.querySelectorAll('.section').forEach(sec => sec.classList.add('is-hidden'));
+    document.getElementById(id).classList.remove('is-hidden');
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     event.currentTarget.classList.add('active');
 }
@@ -139,8 +139,8 @@ window.onload = function () {
     initCharts();
     
     // Update control button status
-    updateRelayButton();
-    updateBuzzerButton();
+    updateFanRelayButton();
+    updateGasValveRelayButton();
 
     // setInterval(() => {
     //     gaugeTemp.refresh(Math.floor(Math.random() * 15) + 20);
@@ -148,33 +148,33 @@ window.onload = function () {
     // }, 3000);
 };
 
-// ==================== RELAY & BUZZER CONTROL ====================
-function toggleRelay() {
-    relayState = !relayState;
+// ==================== RELAY CONTROL ====================
+function toggleFanRelay() {
+    fanRelayState = !fanRelayState;
     const command = JSON.stringify({
         type: "control",
-        device: "relay",
-        state: relayState
+        device: "fan_relay",
+        state: fanRelayState
     });
     Send_Data(command);
-    updateRelayButton();
+    updateFanRelayButton();
 }
 
-function toggleBuzzer() {
-    buzzerState = !buzzerState;
+function toggleGasValveRelay() {
+    gasValveRelayState = !gasValveRelayState;
     const command = JSON.stringify({
         type: "control",
-        device: "buzzer",
-        state: buzzerState
+        device: "gas_valve_relay",
+        state: gasValveRelayState
     });
     Send_Data(command);
-    updateBuzzerButton();
+    updateGasValveRelayButton();
 }
 
-function updateRelayButton() {
-    const btn = document.getElementById('relayBtn');
-    const status = document.getElementById('relayStatus');
-    if (relayState) {
+function updateFanRelayButton() {
+    const btn = document.getElementById('fanRelayBtn');
+    const status = document.getElementById('fanRelayStatus');
+    if (fanRelayState) {
         btn.classList.add('active');
         status.textContent = 'ON';
     } else {
@@ -183,10 +183,10 @@ function updateRelayButton() {
     }
 }
 
-function updateBuzzerButton() {
-    const btn = document.getElementById('buzzerBtn');
-    const status = document.getElementById('buzzerStatus');
-    if (buzzerState) {
+function updateGasValveRelayButton() {
+    const btn = document.getElementById('gasValveRelayBtn');
+    const status = document.getElementById('gasValveRelayStatus');
+    if (gasValveRelayState) {
         btn.classList.add('active');
         status.textContent = 'ON';
     } else {
@@ -198,10 +198,10 @@ function updateBuzzerButton() {
 
 // ==================== DEVICE FUNCTIONS ====================
 function openAddRelayDialog() {
-    document.getElementById('addRelayDialog').style.display = 'flex';
+    document.getElementById('addRelayDialog').classList.remove('is-hidden');
 }
 function closeAddRelayDialog() {
-    document.getElementById('addRelayDialog').style.display = 'none';
+    document.getElementById('addRelayDialog').classList.add('is-hidden');
 }
 function saveRelay() {
     const name = document.getElementById('relayName').value.trim();
@@ -221,7 +221,7 @@ function renderRelays() {
       <i class="fa-solid fa-bolt device-icon"></i>
       <h3>${r.name}</h3>
       <p>GPIO: ${r.gpio}</p>
-      <button class="toggle-btn ${r.state ? 'on' : ''}" onclick="toggleRelay(${r.id})">
+            <button class="toggle-btn ${r.state ? 'on' : ''}" onclick="toggleRelayDevice(${r.id})">
         ${r.state ? 'ON' : 'OFF'}
       </button>
       <i class="fa-solid fa-trash delete-icon" onclick="showDeleteDialog(${r.id})"></i>
@@ -229,7 +229,7 @@ function renderRelays() {
         container.appendChild(card);
     });
 }
-function toggleRelay(id) {
+function toggleRelayDevice(id) {
     const relay = relayList.find(r => r.id === id);
     if (relay) {
         relay.state = !relay.state;
@@ -247,10 +247,10 @@ function toggleRelay(id) {
 }
 function showDeleteDialog(id) {
     deleteTarget = id;
-    document.getElementById('confirmDeleteDialog').style.display = 'flex';
+    document.getElementById('confirmDeleteDialog').classList.remove('is-hidden');
 }
 function closeConfirmDelete() {
-    document.getElementById('confirmDeleteDialog').style.display = 'none';
+    document.getElementById('confirmDeleteDialog').classList.add('is-hidden');
 }
 function confirmDelete() {
     relayList = relayList.filter(r => r.id !== deleteTarget);

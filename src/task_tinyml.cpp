@@ -1,14 +1,20 @@
 #include "task_tinyml.h"
-#include "dht_anomaly_model.h"
+#include "gas_leak_model.h"
+
+void tinyml_init(sensor_handle_t sensor) {
+    // Create the TinyML task and pass the sensor handle as parameter
+    xTaskCreate(task_tinyml, "TinyML Task", 8192, (void*)sensor, 1, NULL);
+}
 
 void task_tinyml(void *pvParameters){
+    sensor_handle_t sensor = (sensor_handle_t)pvParameters;
     // Setup TensorFlow Lite
     constexpr int kTensorArenaSize = 32 * 1024; // Adjust based on model requirements
 
     tflite::MicroErrorReporter micro_error_reporter;
     tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 
-    const tflite::Model* model = tflite::GetModel(dht_anomaly_model_tflite);
+    const tflite::Model* model = tflite::GetModel(gas_leak_model_tflite);
 
     if (model->version() != TFLITE_SCHEMA_VERSION) {
         error_reporter->Report("Model schema mismatch");
@@ -56,18 +62,20 @@ void task_tinyml(void *pvParameters){
 
     while (1){
         sensor_data_t data;
-
-        // If data is not received, skip this iteration and wait for the next one
-        if (xQueueReceive(qSensorTinyML, &data, portMAX_DELAY) != pdTRUE){
+        // Read sensor data from the shared sensor interface
+        if (!sensor_get_data(sensor, &data, TINYML_BIT, portMAX_DELAY)) {
+            // No data available, wait and retry
             continue;
         }
 
-        // Prepare input data
+        // Prepare input data (temperature, humidity, gas)
         input->data.f[0] = data.temperature;
         input->data.f[1] = data.humidity;
+        input->data.f[2] = data.gas;
 
-        // Debug: Print input values
-        Serial.printf("TinyML Input - Temp: %.2f, Humi: %.2f\n", data.temperature, data.humidity);
+        // Log inputs so we can verify model receives gas
+        // Serial.printf("[TINYML] Inputs - Temp: %.2f, Humi: %.2f, Gas: %.4f\n",
+        //           data.temperature, data.humidity, data.gas);
 
         // Run inference
         TfLiteStatus invoke_status = interpreter->Invoke();
@@ -96,15 +104,15 @@ void task_tinyml(void *pvParameters){
             predicted_class = 2;
         }
 
-        // Send inference result to the anomaly result queue
-        sensor_data_t result;
-        result.score = predicted_class;
-        result.temperature = data.temperature;
-        result.humidity = data.humidity;
-        xQueueOverwrite(qAnomalyResult, &result);
+        // Attach predicted class to data and log it
+        data.score = predicted_class;
+        // Write predicted score back into shared sensor record so other
+        // consumers (e.g., CoreIoT) can publish it.
+        if (sensor != NULL) {
+            (void)sensor_update_score(sensor, predicted_class);
+        }
 
-        // Debug: Print output scores
-        Serial.printf("TinyML Output - Normal: %.4f, Warning: %.4f, Critical: %.4f, Predicted Class: %d\n",
-                      normal_score, warning_score, critical_score, predicted_class);
+        // Serial.printf("[TINYML] Output - Normal: %.4f, Warning: %.4f, Critical: %.4f, Predicted Class: %d\n",
+        //           normal_score, warning_score, critical_score, predicted_class);
     }
 }
